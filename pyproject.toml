@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "app-pytorch"
+name = "fedavg-model"
 version = "1.0.0"
 description = ""
 license = "Apache-2.0"
@@ -21,8 +21,8 @@ packages = ["."]
 publisher = "flwrlabs"
 
 [tool.flwr.app.components]
-serverapp = "app_pytorch.server_app:app"
-clientapp = "app_pytorch.client_app:app"
+serverapp = "fedavg.server_app:app"
+clientapp = "fedavg.client_app:app"
 
 [tool.flwr.app.config]
 num-server-rounds = 5
@@ -33,4 +33,4 @@ local-epochs = 1
 default = "local-simulation"
 
 [tool.flwr.federations.local-simulation]
-options.num-supernodes = 10
+options.num-supernodes = 5

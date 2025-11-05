@@ -5,9 +5,9 @@ import torch
 from flwr.app import ArrayRecord, Context, Message, MetricRecord, RecordDict
 from flwr.clientapp import ClientApp
 
-from app_pytorch.task import Net, load_data
-from app_pytorch.task import test as test_fn
-from app_pytorch.task import train as train_fn
+from fedavg.task import Net, load_data
+from fedavg.task import test as test_fn
+from fedavg.task import train as train_fn
 
 # Flower ClientApp
 app = ClientApp()
@@ -15,6 +15,9 @@ app = ClientApp()
 @app.train()
 def train(msg: Message, context: Context):
     """Train the model on local data."""
+
+    # Check for 10 clients
+    print(context)
 
     # Load the model and initialize it with the received weights
 
@@ -50,6 +53,7 @@ def train(msg: Message, context: Context):
     }
     metric_record = MetricRecord(metrics)
     content = RecordDict({"arrays": model_record, "metrics": metric_record})
+    print()
     return Message(content=content, reply_to=msg)
 
 
