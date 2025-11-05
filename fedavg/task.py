@@ -29,18 +29,21 @@ class Net(nn.Module):
 
 fds = None  # Cache FederatedDataset
 
-pytorch_transforms = Compose([ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+#pytorch_transforms = Compose([ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+#pytorch_transforms = ToTensor()
+pytorch_transforms = Compose([ToTensor(), nn.Flatten(start_dim=0)]) # Convert 28x28 MNIST array to tensor and flatten it to 1 dim to feed in
 
 
 def apply_transforms(batch):
-    """Apply transforms to the partition from FederatedDataset."""
-    batch["img"] = [pytorch_transforms(img) for img in batch["img"]]
+    #Apply transforms to the partition from FederatedDataset.
+    #print(batch)
+    batch["image"] = [pytorch_transforms(img) for img in batch["image"]]
+    #for i in range(len(batch["image"])):
+    #    print("ARRAY SHAPE\n\n\n\n\n\n\n\n")
+    #    print(batch["image"][i].shape)
     return batch
 
-
 def load_data(partition_id: int, num_partitions: int):
-
-    # TODO: REPLACE WITH MNIST DATALOADER
 
     """Load partition cifar10 data."""
     # Only initialize `FederatedDataset` once
@@ -55,9 +58,10 @@ def load_data(partition_id: int, num_partitions: int):
     # Divide data on each node: 80% train, 20% test
     partition_train_test = partition.train_test_split(test_size=0.2, seed=42)
     # Construct dataloaders
-    #partition_train_test = partition_train_test.with_transform(apply_transforms)
+    partition_train_test = partition_train_test.with_transform(apply_transforms)
     trainloader = DataLoader(partition_train_test["train"], batch_size=32, shuffle=True)
     testloader = DataLoader(partition_train_test["test"], batch_size=32)
+    #print(trainLoader)
     return trainloader, testloader
 
 
@@ -65,12 +69,9 @@ def load_centralized_dataset():
     """Load test set and return dataloader."""
     # Load entire test set
     test_dataset = load_dataset("ylecun/mnist", split="test")
-    # dataset = test_dataset.with_format("torch").with_transform(apply_transforms)
-    # return DataLoader(dataset, batch_size=32)
-    return DataLoader(test_dataset, batch_size=32)
-
-
-# TODO REPLACE WITH OUT TRAIN/TEST FUNCTIONS
+    dataset = test_dataset.with_format("torch").with_transform(apply_transforms)
+    return DataLoader(dataset, batch_size=32)
+    #return DataLoader(test_dataset, batch_size=32)
 
 def train(net, trainloader, epochs, lr, device):
     """Train the model on the training set."""
@@ -81,7 +82,7 @@ def train(net, trainloader, epochs, lr, device):
     running_loss = 0.0
     for _ in range(epochs):
         for batch in trainloader:
-            images = batch["img"].to(device)
+            images = batch["image"].to(device)
             labels = batch["label"].to(device)
             optimizer.zero_grad()
             loss = criterion(net(images), labels)
@@ -99,9 +100,11 @@ def test(net, testloader, device):
     correct, loss = 0, 0.0
     with torch.no_grad():
         for batch in testloader:
-            images = batch["img"].to(device)
+            images = batch["image"].to(device)
             labels = batch["label"].to(device)
             outputs = net(images)
+            print("outputs.shape:", outputs.shape)
+            print("labels.shape:", labels.shape)
             loss += criterion(outputs, labels).item()
             correct += (torch.max(outputs.data, 1)[1] == labels).sum().item()
     accuracy = correct / len(testloader.dataset)
