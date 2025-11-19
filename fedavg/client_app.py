@@ -17,7 +17,7 @@ def train(msg: Message, context: Context):
     """Train the model on local data."""
 
     # Check for 10 clients
-    print(context)
+    print(f'From Server: {msg}\n\n\n\n\nNew Context: {context}')
 
     # Load the model and initialize it with the received weights
 
@@ -53,7 +53,7 @@ def train(msg: Message, context: Context):
     }
     metric_record = MetricRecord(metrics)
     content = RecordDict({"arrays": model_record, "metrics": metric_record})
-    print()
+    print(f'Client sending: {content}')
     return Message(content=content, reply_to=msg)
 
 

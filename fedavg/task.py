@@ -29,12 +29,13 @@ class Net(nn.Module):
 
 fds = None  # Cache FederatedDataset
 
-pytorch_transforms = Compose([ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+pytorch_transforms = Compose([ToTensor()])
 
 
 def apply_transforms(batch):
     """Apply transforms to the partition from FederatedDataset."""
-    batch["img"] = [pytorch_transforms(img) for img in batch["img"]]
+    print(batch['image'])
+    batch["image"] = [pytorch_transforms(img) for img in batch["image"]]
     return batch
 
 
@@ -55,7 +56,7 @@ def load_data(partition_id: int, num_partitions: int):
     # Divide data on each node: 80% train, 20% test
     partition_train_test = partition.train_test_split(test_size=0.2, seed=42)
     # Construct dataloaders
-    #partition_train_test = partition_train_test.with_transform(apply_transforms)
+    partition_train_test = partition_train_test.with_transform(apply_transforms)
     trainloader = DataLoader(partition_train_test["train"], batch_size=32, shuffle=True)
     testloader = DataLoader(partition_train_test["test"], batch_size=32)
     return trainloader, testloader
@@ -65,9 +66,8 @@ def load_centralized_dataset():
     """Load test set and return dataloader."""
     # Load entire test set
     test_dataset = load_dataset("ylecun/mnist", split="test")
-    # dataset = test_dataset.with_format("torch").with_transform(apply_transforms)
-    # return DataLoader(dataset, batch_size=32)
-    return DataLoader(test_dataset, batch_size=32)
+    dataset = test_dataset.with_format("torch").with_transform(apply_transforms)
+    return DataLoader(dataset, batch_size=32)
 
 
 # TODO REPLACE WITH OUT TRAIN/TEST FUNCTIONS
@@ -81,7 +81,7 @@ def train(net, trainloader, epochs, lr, device):
     running_loss = 0.0
     for _ in range(epochs):
         for batch in trainloader:
-            images = batch["img"].to(device)
+            images = batch["image"].to(device)
             labels = batch["label"].to(device)
             optimizer.zero_grad()
             loss = criterion(net(images), labels)
@@ -99,7 +99,7 @@ def test(net, testloader, device):
     correct, loss = 0, 0.0
     with torch.no_grad():
         for batch in testloader:
-            images = batch["img"].to(device)
+            images = batch["image"].to(device)
             labels = batch["label"].to(device)
             outputs = net(images)
             loss += criterion(outputs, labels).item()
