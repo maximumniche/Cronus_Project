@@ -25,7 +25,7 @@ serverapp = "fedavg.server_app:app"
 clientapp = "fedavg.client_app:app"
 
 [tool.flwr.app.config]
-num-server-rounds = 5
+num-server-rounds = 10
 fraction-train = 0.5
 local-epochs = 1
 
